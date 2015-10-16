@@ -110,20 +110,26 @@ Comme la plupart des pertes de paquets sur les réseaux filaires sont provoqués
 
 \subsubsection*{Fast retransmit}
 
-Si un ACK est reçu trois fois de suite, alors le segment (ACK+1) a probablement été perdu. Il ne s'agit probablement pas d'un déséquencement. Pour pallier ce problème, Tahoe renvoie directement le segment concerné au lieu d'attendre la fin d'un timeout. Après un fast retransmit, $sstresh = \frac{CWND}{2} $ et $ CWND= 1$ (Slow Start).
+Si un ACK est reçu trois fois de suite, alors le segment (ACK+1) a probablement été perdu. Il ne s'agit probablement pas d'un déséquencement. Pour pallier ce problème, Tahoe renvoie directement le segment concerné au lieu d'attendre la fin d'un timeout. Après un fast retransmit, $sstresh=\frac{CWND}{2} $ et $ CWND=1$ (Slow Start).
 
-\subsubsection*{Problèmes de Tahoe}
+\subsubsection*{Avantages et faiblesses}
+En résumé, Tahoe est déjà une réelle avancée, car il permet d'approximer très grossièrement la plus grosse taille de fenêtre d'émission possible, et il reste stable à moins qu'il n'y aie des congestions sur le réseau. Dans ce cas, Tahoe peut s'adapter au problème et diminuer la taille de sa fenêtre d'émission.
 
-Tahoe présente de nombreuses faiblesses :
-\begin{itemize}
-	\item First item in a list 
-	\item Second item in a list 
-	\item Third item in a list
-\end{itemize}
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. 
+Néanmoins, la réinitialisation de la fenêtre d'émission à \textbf{1} à la moindre perte de paquet est une sous-estimation beaucoup trop importante. La taille moyenne de CWND est donc bien plus faible que ce qu'elle pourrait être optimalement.
 
-Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies 
 
+\subsection*{TCP Reno}
+TCP résoud déjà grandement le problème de l'oscillation perpetuelle Slow Start/CA en ajoutant la notion de \textbf{Fast Recovery}.
+
+\subsubsection*{Fast recovery}
+Après un fast retransmit, au lieu de passer en Slow Start on applique :
+$ sstresh=\frac{CWND}{2}, CWND=sstresh+3$. En fait on repasse directement en CA, tout en augmentant la taille de CWND de 3, en référence aux trois segments qui n'ont pas été reçus à cause des ACK dupliqués. En cas de time out néanmoins, on repasse en Slow Start. Cette stratégie permet en cas de perte de ne pas baisser drastiquement la taille de CWND, à moins d'un time out. Un time out est en fait plus grave qu'une simple perte de paquet. Il témoigne probablement d'une modification topologique du réseau ou bien d'une congestion importante, alors qu'une simple perte de paquet peut-être due à des évènements plus ponctuels, tels qu'un déséquencement ou une perte.
+
+\subsubsection*{Faiblesses}
+
+TCP Reno réagit bien au pertes de paquets quand elles se limitent à une par rafale. Quand par contre il y en a plusieurs par rafale, Reno est presque aussi inefficace que Tahoe, car il ne peut détecter qu'une seule perte de paquet à la fois.
+
+Autre problème : dans certains cas, CWND peut être diminué deux fois en cas de pertes multiples dans une même rafale.
 \section*{Heading on level 1 again}
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies 
 
