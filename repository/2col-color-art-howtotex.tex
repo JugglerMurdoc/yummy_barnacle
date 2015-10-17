@@ -100,7 +100,7 @@
 \section*{Les premières implémentations de TCP}
 De TCP Tahoe à TCP Westwood, en passant par TCP Reno, nous allons vous présenter une série d'algorithmes qui se sont globalement succédés, chacun étant dans la plupart des cas plus efficace que son prédecesseur, en tout point.
 
-\subsection*{TCP Tahoe}
+\subsection*{Tahoe}
 \subsubsection*{Slow start \& congestion avoidance}
 
 
@@ -118,8 +118,8 @@ En résumé, Tahoe est déjà une réelle avancée, car il permet d'approximer t
 Néanmoins, la réinitialisation de la fenêtre d'émission à \textbf{1} à la moindre perte de paquet est une sous-estimation beaucoup trop importante. La taille moyenne de CWND est donc bien plus faible que ce qu'elle pourrait être optimalement.
 
 
-\subsection*{TCP Reno}
-TCP résoud déjà grandement le problème de l'oscillation perpetuelle Slow Start/CA en ajoutant la notion de \textbf{Fast Recovery}.
+\subsection*{Reno}
+Reno résoud déjà grandement le problème de l'oscillation perpetuelle Slow Start/CA en ajoutant la notion de \textbf{Fast Recovery}.
 
 \subsubsection*{Fast recovery}
 Après un fast retransmit, au lieu de passer en Slow Start on applique :
@@ -129,29 +129,27 @@ $ sstresh=\frac{CWND}{2}, CWND=sstresh+3$. En fait on repasse directement en CA,
 
 TCP Reno réagit bien au pertes de paquets quand elles se limitent à une par rafale. Quand par contre il y en a plusieurs par rafale, Reno est presque aussi inefficace que Tahoe, car il ne peut détecter qu'une seule perte de paquet à la fois.
 
-Autre problème : dans certains cas, CWND peut être diminué deux fois en cas de pertes multiples dans une même rafale.
-\section*{Heading on level 1 again}
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies 
+De plus, il se peut qu'au sein d'une même rafale, l'émetteur aie le temps de passer en Fast Recovery, puis à nouveau en Congestion Avoidance, \textbf{deux fois}. Ce qui veut dire que si la fenêtre est trop grande et les pertes trop espacées au sein de cette fenêtre, la CWND peut-être divisée par 4.
 
-\begin{table}
-\caption{Random table}
-\centering
-	\begin{tabular}{llr}
-		\toprule
-		\multicolumn{2}{c}{Name} \\
-		\cmidrule(r){1-2}
-			First name & Last Name & Grade \\
-		\midrule
-			John & Doe & $7.5$ \\
-			Richard & Miles & $2$ \\
-		\bottomrule
-	\end{tabular}
-\end{table}
+\subsection*{New Reno}
+New Reno peut détecter les pertes de paquets multiples et est, de fait, plus performant que Reno. En effet, New Reno garde une trace de tous les segments envoyés dans une rafale. Lorsqu'il détecte une perte, il \textbf{reste} en fast recovery tant que tous les segments de cette rafale n'ont pas été acquittés par le destinataire. New Reno est mieux que Reno en tout point.
 
-\subsection*{Heading on level 2}
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. 
+\subsubsection*{Problèmes}
+Puisque les pertes ne sont détectéee s que par les duplications d'acquittements, il faut tout de même attendre un timeout entier pour détecter toutes les pertes. 
 
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. 
+\subsection*{Vegas}
+
+\subsubsection*{Nouvelle estimation du timeout}
+
+D'après les travaux de Lawrence Brakmo et Larry L. Peterson, deux chercheurs de l'université d'Arizona et concepteurs de Vegas, Reno et New Reno sont très peu performants en ce qui concernt les \textbf{time out}. En effet, ils ont mesuré que pour un RTT moyen de 500ms, il fallait approximativement \textbf{1100ms} à New Reno pour détecter un time out.\footnote{\begin{quote}\textit{In Reno, round trip time (RTT) and variance estimates are computed using a coarse-grained timer (around 500 ms), [...] we found that for losses that resulted in a timeout—usually due to two or more dropped segments in a RTT , the exact figure depends on the number of segments in 4 transit—it took Reno an average of 1100ms.}\end{quote}} Ce qui correspond effectivement à plus de deux RTT. Vegas mesure le temps écoulé entre l'envoi d'un segment et la réception de son acquittement. Et mesure ainsi dynamiquement les RTT.
+
+Cela permet non seulement d'estimer le time out plus précisément et de perdre moins de temps en cas de réinitialisation déclenchée par un time out, mais non seulement de détecter les pertes et les déséquencements préventivement :
+\begin{description}
+	\item[En cas d'ACK dupliqué]{, on compare le nouveau RTT avec le RTT mesuré précédemment. Si elle est supérieure à Time Out value, on renvoie directement le segment suivant, sans attendre trois acquittements dupliqués.}
+	\item[Après un ACK dupliqué]{on fait de même : en effet un segment perdu peut en cacher un autre. }
+\end{description}
+
+
 \begin{description}
 	\item[First] This is the first item
 	\item[Last] This is the last item
