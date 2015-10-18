@@ -167,7 +167,13 @@ BIC est une implémentation TCP optimisée pour les \textit{Long fat network}, c
 \subsubsection*{Protocole}
 Pour procéder à sa recherche binaire, BIC enregistre $W_{max}$, la taille maximum de CWND avant le dernire Fast Recovery, et $W_{min}$, la taille de la fenêtre juste \textbf{avant} le dernier fast recovery. La moyenne de $W_{max}$ et $W_{min}$, $W_{temp}$ est utilisée comme CWND. On augmente CWND linéairement jusqu'à $W_{max}$. S'il y a perte de paquet, $W_{temp}$ devient le dernier $W_{max}$, sinon il devient le dernier $W_{min}$. La taille de la fenêtre $\{W_{max}\;W_{min}\}$ est divisée par deux à chaque itération. Afin de ne pas imposer de changement de débit trop violent au réseau, on plafonne l'augmentation de la CWND arbitrairement avec un indice $S_{max}$.
 
-Quand CWND a atteind la granularité minimale, c'est à dire quand la taille est inférieure à $ S_{max}$ , on repasse en slow start, en TCP "normal", pour essayer de trouver une nouvelle fenêtre, qui sera peut-être plus grande.
+Quand CWND dépasse $W_{max}$, il faut trouver une nouvelle taille de fenêtre maximale. On entre alors en "Max probing" : on augmente d'abord CWND linéairement, de $S_{max}$, en supposant qu'il n'est pas loin, puis au bout d'un certain temps, s'il n'y a pas de perte, on suppose que $W_{max}$ est très élevé. Dans ce cas on augmente CWND de $N \times S_{max}$. N étant le nombre d'itérations de la phase Incremental Addition du max probing.
+
 \subsection*{CUBIC}
+BIC est certes avantageux pour les \textit{LFN}, mais il est très aggressif, dans le sens ou il augmente très rapidement et très fortement sa CWND. C'est normal, c'est le but de BIC. Pour des réseaux à faible débit ou faible RTT, cela peut-être néanmoins très contraignant.
+\subsubsection*{Protocole}
+Cubic se veut lui aussi souple et stable, mais beaucoup moins aggressif. La taille de CWND est déterminée par une fonction cubique : 
+
+$W_{CUBIC} = C(t-K)^3 - W_{max}$
 \subsection*{Compound}
 \end{document}
