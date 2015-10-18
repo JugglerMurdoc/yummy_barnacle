@@ -162,8 +162,12 @@ Westwood est "amical" (\textit{friendly}). D'après les fondateurs de Westwood, 
 
 \section*{Les implémentations modernes de TCP}
 \subsection*{BIC (\textit{\textbf{B}inary \textbf{I}ncrease \textbf{C}ongestion Control}}
-BIC est une implémentation TCP optimisée pour les \textit{Long fat network}, c'est à dire les réseaux à grande latence et à à grand débit, tels que les réseaux satellitaires. Dans ces réseaux, il faut trouver la CWND optimale en provoquant le moins de perte de paquet possible. Pour ce faire, BIC fait une recherche binaire, 
+BIC est une implémentation TCP optimisée pour les \textit{Long fat network}, c'est à dire les réseaux à grande latence et à à grand débit, tels que les réseaux satellitaires. Dans ces réseaux, il faut trouver la CWND optimale en provoquant le moins de perte de paquet possible. Pour ce faire, BIC fait une recherche binaire, recherche réputée pour sa complexitée logarithmique.
 
+\subsubsection*{Protocole}
+Pour procéder à sa recherche binaire, BIC enregistre $W_{max}$, la taille maximum de CWND avant le dernire Fast Recovery, et $W_{min}$, la taille de la fenêtre juste \textbf{avant} le dernier fast recovery. La moyenne de $W_{max}$ et $W_{min}$, $W_{temp}$ est utilisée comme CWND. On augmente CWND linéairement jusqu'à $W_{max}$. S'il y a perte de paquet, $W_{temp}$ devient le dernier $W_{max}$, sinon il devient le dernier $W_{min}$. La taille de la fenêtre $\{W_{max}\;W_{min}\}$ est divisée par deux à chaque itération. Afin de ne pas imposer de changement de débit trop violent au réseau, on plafonne l'augmentation de la CWND arbitrairement avec un indice $S_{max}$.
+
+Quand CWND a atteind la granularité minimale, c'est à dire quand la taille est inférieure à $ S_{max}$ , on repasse en slow start, en TCP "normal", pour essayer de trouver une nouvelle fenêtre, qui sera peut-être plus grande.
 \subsection*{CUBIC}
 \subsection*{Compound}
 \end{document}
