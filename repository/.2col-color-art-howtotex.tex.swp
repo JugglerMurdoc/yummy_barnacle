@@ -144,11 +144,11 @@ D'après les travaux de Lawrence Brakmo et Larry L. Peterson, deux chercheurs de
 Cela permet non seulement d'estimer le time out plus précisément et de perdre moins de temps en cas de réinitialisation déclenchée par un time out, mais non seulement de détecter les pertes et les déséquencements préventivement :
 \begin{description}
 	\item[En cas d'ACK dupliqué]{, on compare le nouveau RTT avec le RTT mesuré précédemment. Si elle est supérieure à Time Out value, on renvoie directement le segment suivant, sans attendre trois acquittements dupliqués.}
-	\item[Après un ACK dupliqué]{on fait de même. En effet, il est peu couteux de renvoyer un segment que de perdre beaucoup de temps pour découvrir qu'il a été perdu. }
+	\item[Après un ACK dupliqué]{on fait de même. En effet, il est moins couteux de renvoyer un segment que de perdre beaucoup de temps pour découvrir qu'il a été perdu. }
 \end{description}
 De plus, Vegas ne diminue la taille de sa CWND que si le dernier ACK renvoyé a été renvoyé \textbf{après} le dernier changement de taille de fenêtre. En effet on peut supposer que deux pertes peuvent avoir été provoquées par la même congestion et qu'il ne sert à rien d'y réagir deux fois.
 \subsubsection*{Congestion avoidance}
-Pour l'évitement de congestions, Vegas fait une estimation de la CWND \textit{attendue} et la compare avec la CWND \textit{estimée}. En suite on fixe de seuils $\alpha<\beta$. Si la différence des seuils est inférieure à $\alpha$ alors on augmente CWND linéairement, si elle est supérieure à $ \beta $, on la diminue linéairement.
+Pour l'évitement de congestions, Vegas fait une estimation du débit \textit{attendu} et le compare avec le débit \textit{estimé}. Ensuite on fixe des seuils $\alpha<\beta$. Si la différence des débits est inférieure à $\alpha$ alors on augmente CWND linéairement, si elle est supérieure à $ \beta $, on la diminue linéairement.
 \subsubsection*{Congestion avoidance}
 En Slow Start, Vegas n'augmente exponentiellement que tout les RTT, donc moins fréquemment que ses comparses. De plus, on fixe expérimentalement un seuil $\gamma$. Si la différence entre le RTT \textit{estimé} et le \textit{attendu} est inférieure à ce $\gamma$, on repasse en CA.
 \subsubsection*{Aggressivité}
@@ -185,4 +185,17 @@ Derrière cette fonction complexe se cachent plusieurs fait :
 \end{description}
 
 \subsection*{Compound}
+Compound (qui signifie en anglais \textit{compsé}) tient son nom du fait qu'il est un hybride entre deux algorithmes TCP. L'idée derrière ce principe est que si le lien est sous-utilisé, alors il faut augmenter la taille de CWND le plus rapidement possible, mais que s'il est pleinement utilisé, alors il faut limiter l'aggressivité de l'algorithme, afin de garantir le \textit{TCP fairness}.
+La CWND est la somme de deux fenêtre : une \textit{delay-window} et une \textit{AIMD-Window}. Bien que AIMD (\textit{additive-increase/multiplicative-decrease}) ne soit pas traité dans ce texte, on peut noter que cet algorithme augmente linéairement et est divisé par un facteur fixé arbitrairement en cas de congestion. En cas de perte de paquet, et qu'on entre en congestion avoidance, la \textit{delay-window} prend de plus en plus d'ampleur selon un algorithme très similaire à TCP Vegas, tandis que la \textit{AIMD-Window} a de moins en moins d'importance puisqu'elle augmente désormais très lentement.
+
+\section*{Y a-t-il un meilleur TCP?}
+\subsection*{Critères}
+Il y a trois critères pour comparer l'efficacité des algorithmes :
+\begin{description}
+\item[Son \textbf{équité} :]{si plusieurs agents de cet algorithme tournent sur un même réseau, vont-ils se partager la bande passante équitablement?}
+\item[Sa \textbf{compatibilité} :]{cet algorithme va-t-il être trop aggressif ou trop pacifique face à d'autres algorithmes TCP sur le réseau?}
+\item[Son \textbf{efficacité} :]{cet algorithme monopolise-t-il en moyenne une proportion suffisante du lien?} 	
+\subsection*{Bilan}
+De nombreuses simulations ont montré que les premiers algorithmes de TCP sont désormais obsolètes. Vegas est incompatible avec Reno, Tahoe est trop oscillant, 
+\end{description}
 \end{document}
