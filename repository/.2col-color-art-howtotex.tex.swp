@@ -174,6 +174,15 @@ BIC est certes avantageux pour les \textit{LFN}, mais il est très aggressif, da
 \subsubsection*{Protocole}
 Cubic se veut lui aussi souple et stable, mais beaucoup moins aggressif. La taille de CWND est déterminée par une fonction cubique : 
 
-$W_{CUBIC} = C(t-K)^3 - W_{max}$
+$W_{CUBIC} = C(t-K)^3 - W_{max}$, avec \textit{C} déterminé empiriquement, \textit{t} le temps écoulé depuis depuis la dernière réduction de fenêtre, $W_{max}$ la taille de la fenêtre juste avant la dernière réduction de fenêtre et 
+
+$K = \sqrt[3]{W_{max}\times\frac{\beta}{C}}$, $\beta$ étant le facteur de réduction de la CWND lors de la dernière réduction.
+Derrière cette fonction complexe se cachent plusieurs fait :
+\begin{description}
+\item{La fonction est \textbf{cubique}, donc elle croît rapidement puis se stabilise autour de la $W_{max}$, pour recroître rapidement.}
+\item{Elle dépend de l'intervalle de temps écoulé depuis la dernière réduction ce qui signifie que \textbf{tous} les processus Cubic TCP d'un même réseau croîtront à la même vitesse, garantissant l'équité de l'algorithme envers différents agents TCP.}
+\item{Si le RTT est faible, la fonction croît lentement. Ce qui résoud le problème d'aggressivité posé posé par BIC, car CUBIC est "amical" envers toutes les implémentations de TCP.} 	
+\end{description}
+
 \subsection*{Compound}
 \end{document}
