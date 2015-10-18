@@ -155,13 +155,15 @@ En Slow Start, Vegas n'augmente exponentiellement que tout les RTT, donc moins f
 La courbe de Vegas est donc très ronde puisque l'algorithme tente d'anticiper les problèmes de congestion. Ces variations sont beaucoup plus lentes que Reno, par exemple. On dit que Vegas est \textbf{peu aggressif}. Contrairement à Reno ou à Tahoe, il ne tente pas de prendre le plus de bande passante que possible. Il en prend plus si il sent que le réseau lui permet. Si Reno intervient sur le même réseau que Vegas, alors les performances de Vegas vont diminuer considérablement, étant donné que Vegas diminuera de sa propre initiative son débit d'émission en amont de la congestion provoquée par Reno. Vegas cède en quelque sorte la priorité aux autres algorithmes cités précedemment.
 
 \subsection*{Westwood}
-Westwood a été conçu pour les \textit{Long fat network}, c'est à dire les réseaux à grand débit sur de longues distances, tels que les réseaux satellitaires. Ces réseaux ont un plus grand taux de perte que les réseaux filaire, pertes qui ne sont donc pas dues à des congestions.Westwood fait une estimation du débit du réseau en divisant la taille d'un paquet envoyé par l'intervalle de temps entre les deux derniers acquittements. En cas de duplication d'ACK ou de time out, on se base sur cette estimation pour fixer sstresh : $sstresh=\frac{BWE \times RTT_{min}}{segsize} $. Westwood se base donc sur le débit moyen du réseau au lieu de compter les pertes, ce qui est plus judicieux dans le cas de réseaux non-filaires.
+Westwood a été conçu pour les réseaux connaissant un taux de perte de paquet important malgré une absence de congestion, tels que les réseaux sans fil. Comme ces pertes sont inhérentes au réseau, il ne sert à rien de compter directement les paquets perdus, car le même taux de paquet sera perdu quelque soit la taille de CWND. Du coup, Westwood fait une estimation du débit du réseau en divisant la taille d'un paquet envoyé par l'intervalle de temps entre les deux derniers acquittements. En cas de duplication d'ACK ou de time out, on se base sur cette estimation pour fixer sstresh : $sstresh=\frac{BWE \times RTT_{min}}{segsize} $. Westwood se base donc sur le débit moyen du réseau au lieu de compter les pertes.
 
 \subsubsection*{Aggessivité}
-Westwood est "amical" (\textit{friendly}). Lorsqu'il est en concurrence avec Reno, il partage la connexion très équitablement. De plus, TCP Westwood est considérablement plus performant que Reno lorsqu'il y a des pertes de 1\% dans le réseau, ce qui est un taux crédible dans des réseaux non-filaires.
+Westwood est "amical" (\textit{friendly}). D'après les fondateurs de Westwood, lorsqu'il est en concurrence avec Reno, il partage la connexion très équitablement. De plus, TCP Westwood est considérablement plus performant que Reno lorsqu'il y a des pertes de 1\% dans le réseau, ce qui est un taux crédible dans des réseaux non-filaires.
 
 \section*{Les implémentations modernes de TCP}
-\subsection*{BIC}
+\subsection*{BIC (\textit{\textbf{B}inary \textbf{I}ncrease \textbf{C}ongestion Control}}
+BIC est une implémentation TCP optimisée pour les \textit{Long fat network}, c'est à dire les réseaux à grande latence et à à grand débit, tels que les réseaux satellitaires. Dans ces réseaux, il faut trouver la CWND optimale en provoquant le moins de perte de paquet possible. Pour ce faire, BIC fait une recherche binaire, 
+
 \subsection*{CUBIC}
 \subsection*{Compound}
 \end{document}
