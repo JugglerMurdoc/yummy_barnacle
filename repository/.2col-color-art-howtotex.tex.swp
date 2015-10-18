@@ -130,7 +130,7 @@ De plus, il se peut qu'au sein d'une même rafale, l'émetteur aie le temps de p
 \subsection*{New Reno}
 New Reno peut détecter les pertes de paquets multiples et est, de fait, plus performant que Reno. En effet, New Reno garde une trace de tous les segments envoyés dans une rafale. Lorsqu'il détecte une perte, il \textbf{reste} en fast recovery tant que tous les segments de cette rafale n'ont pas été acquittés par le destinataire. New Reno est mieux que Reno en tout point.
 \subsubsection*{Problèmes}
-Puisque les pertes ne sont détectéee s que par les duplications d'acquittements, il faut tout de même attendre un timeout entier pour détecter toutes les pertes. 
+Puisque les pertes ne sont détectées que par les duplications d'acquittements, il faut tout de même attendre un timeout entier pour détecter toutes les pertes. 
 \subsection*{SACK}
 \subsubsection*{ACK sélectifs}
 SACK permet de nommer les segments non-reçus, contrairement à Reno qui se contente de dupliquer les acquittement. Cela permet de récupérer plus vite les paquets perdus.
@@ -196,6 +196,8 @@ Il y a trois critères pour comparer l'efficacité des algorithmes :
 \item[Sa \textbf{compatibilité} :]{cet algorithme va-t-il être trop aggressif ou trop pacifique face à d'autres algorithmes TCP sur le réseau?}
 \item[Son \textbf{efficacité} :]{cet algorithme monopolise-t-il en moyenne une proportion suffisante du lien?} 	
 \subsection*{Bilan}
-De nombreuses simulations ont montré que les premiers algorithmes de TCP sont désormais obsolètes. Vegas est incompatible avec Reno, Tahoe est trop oscillant, 
+De nombreuses simulations ont montré que les premiers algorithmes de TCP sont désormais obsolètes. Vegas est incompatible avec Reno, Tahoe est trop oscillant, Reno/New Reno mettent trop de temps à détecter les pertes multiples, SACK est difficile à mettre en place et Westwood présente certains défauts qui ont été corrigés dans Westwood+.
+
+Pour les implémentations modernes de TCP, le choix de l'algorithme dépend de la topologie du réseau. En effet, BIC est conçu pour les \textit{Long Fat Network}, tandis que CUBIC réagit mieux sur les réseaux à faible latence. Il est donc conseillé d'expérimenter différentes implémentations sur le réseau cible et de regarder laquelle est la plus efficace, en fonction du critère que l'on priorise. L'équité par exemple paraît très importante sur un réseau très peuplé, la compatibilité le paraît encore plus si l'on n'est pas maître des autres agents utilisant le réseau. Enfin si c'est un réseau peu peuplé, alors on peut probablement se base sur l'efficacité de l'algorithme lorsqu'on le sélectionne. 
 \end{description}
 \end{document}
