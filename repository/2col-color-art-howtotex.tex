@@ -73,14 +73,14 @@
 										
 										\renewcommand\thesubsubsection{}
 
-\pretitle{\vspace{-30pt} \begin{flushleft} \HorRule 
-				\fontsize{40}{40} \usefont{OT1}{phv}{b}{n} \color{DarkRed} \selectfont 
+\pretitle{\vspace{-60pt} \begin{flushleft} \HorRule 
+				\fontsize{15}{15} \usefont{OT1}{phv}{b}{n} \color{DarkRed} \selectfont 
 				}
 \title{Comparaison des principaux algorithmes TCP}					% Title of your article goes here
-\posttitle{\par\end{flushleft}\vskip 0.5em}
+\posttitle{\par\end{flushleft}\vskip 0.1em}
 
 \preauthor{\begin{flushleft}
-					\large \lineskip 0.5em \usefont{OT1}{phv}{b}{sl} \color{DarkRed}}
+					\large \lineskip 0.1em \usefont{OT1}{phv}{b}{sl} \color{DarkRed}}
 \author{Thibaut Ehlinger, }											% Author name goes here
 \postauthor{\footnotesize \usefont{OT1}{phv}{m}{sl} \color{Black} 
 					Université de Strasbourg 								% Institution of author
@@ -129,32 +129,39 @@ De plus, il se peut qu'au sein d'une même rafale, l'émetteur aie le temps de p
 
 \subsection*{New Reno}
 New Reno peut détecter les pertes de paquets multiples et est, de fait, plus performant que Reno. En effet, New Reno garde une trace de tous les segments envoyés dans une rafale. Lorsqu'il détecte une perte, il \textbf{reste} en fast recovery tant que tous les segments de cette rafale n'ont pas été acquittés par le destinataire. New Reno est mieux que Reno en tout point.
-
 \subsubsection*{Problèmes}
 Puisque les pertes ne sont détectéee s que par les duplications d'acquittements, il faut tout de même attendre un timeout entier pour détecter toutes les pertes. 
+\subsection*{SACK}
+\subsubsection*{ACK sélectifs}
+SACK permet de nommer les segments non-reçus, contrairement à Reno qui se contente de dupliquer les acquittement. Cela permet de récupérer plus vite les paquets perdus.
+\subsubsection*{Variable \textit{pipe}}
+En Fast Recovery, SACK initialise une variable \textit{pipe}. C'est une estimation du nombre de paquets qui sont encore dans le réseau. Si SACK reçoit une duplication d'ACK, il incrémente pipe. Il le décrémente pour toute nouvelle transmission ou nouvel ACK. Quand $ pipe < CWD$, il renvoie tous les segements qui n'ont pas été acquittés. Cela permet de renvoyer plusieurs segments perdus en moins d'un RTT.
+\subsubsection*{Problèmes de SACK}
+SACK est nettement plus efficace que New Reno, mais il présente un défaut majeur : il doit être implémenté par l'émetteur \textbf{et} le récepteur, sinon il ne marchera pas.
 \subsection*{Vegas}
 \subsubsection*{Mécanisme de retransmission}
 D'après les travaux de Lawrence Brakmo et Larry L. Peterson, deux chercheurs de l'université d'Arizona et concepteurs de Vegas, Reno et New Reno sont très peu performants en ce qui concernt les \textbf{time out}. En effet, ils ont mesuré que pour un RTT moyen de 500ms, il fallait approximativement \textbf{1100ms} à New Reno pour détecter un time out.\footnote{\begin{quote}\textit{In Reno, round trip time (RTT) and variance estimates are computed using a coarse-grained timer (around 500 ms), [...] we found that for losses that resulted in a timeout—usually due to two or more dropped segments in a RTT , the exact figure depends on the number of segments in 4 transit—it took Reno an average of 1100ms.}\end{quote}} Ce qui correspond effectivement à plus de deux RTT. Vegas mesure le temps écoulé entre l'envoi d'un segment et la réception de son acquittement. Et mesure ainsi dynamiquement les RTT.
-
 Cela permet non seulement d'estimer le time out plus précisément et de perdre moins de temps en cas de réinitialisation déclenchée par un time out, mais non seulement de détecter les pertes et les déséquencements préventivement :
 \begin{description}
 	\item[En cas d'ACK dupliqué]{, on compare le nouveau RTT avec le RTT mesuré précédemment. Si elle est supérieure à Time Out value, on renvoie directement le segment suivant, sans attendre trois acquittements dupliqués.}
 	\item[Après un ACK dupliqué]{on fait de même. En effet, il est peu couteux de renvoyer un segment que de perdre beaucoup de temps pour découvrir qu'il a été perdu. }
 \end{description}
-
 De plus, Vegas ne diminue la taille de sa CWND que si le dernier ACK renvoyé a été renvoyé \textbf{après} le dernier changement de taille de fenêtre. En effet on peut supposer que deux pertes peuvent avoir été provoquées par la même congestion et qu'il ne sert à rien d'y réagir deux fois.
-
 \subsubsection*{Congestion avoidance}
 Pour l'évitement de congestions, Vegas fait une estimation de la CWND \textit{attendue} et la compare avec la CWND \textit{estimée}. En suite on fixe de seuils $\alpha<\beta$. Si la différence des seuils est inférieure à $\alpha$ alors on augmente CWND linéairement, si elle est supérieure à $ \beta $, on la diminue linéairement.
-
 \subsubsection*{Congestion avoidance}
 En Slow Start, Vegas n'augmente exponentiellement que tout les RTT, donc moins fréquemment que ses comparses. De plus, on fixe expérimentalement un seuil $\gamma$. Si la différence entre le RTT \textit{estimé} et le \textit{attendu} est inférieure à ce $\gamma$, on repasse en CA.
-
 \subsubsection*{Aggressivité}
 La courbe de Vegas est donc très ronde puisque l'algorithme tente d'anticiper les problèmes de congestion. Ces variations sont beaucoup plus lentes que Reno, par exemple. On dit que Vegas est \textbf{peu aggressif}. Contrairement à Reno ou à Tahoe, il ne tente pas de prendre le plus de bande passante que possible. Il en prend plus si il sent que le réseau lui permet. Si Reno intervient sur le même réseau que Vegas, alors les performances de Vegas vont diminuer considérablement, étant donné que Vegas diminuera de sa propre initiative son débit d'émission en amont de la congestion provoquée par Reno. Vegas cède en quelque sorte la priorité aux autres algorithmes cités précedemment.
 
-\subsection*{SACK}
-SACK, pour "selective ACK", est basé sur TCP Reno et lui ajoute une amélioration majeure permettant de contourner le problème des pertes de paquets multiples.
-\subsubsection*{Variable \textit{pipe}}
-En Fast Recovery, SACK initialise une variable \textit{pipe}. C'est une estimation du nombre de paquets qui sont encore dans le réseau. Si SACK reçoit une duplication d'ACK, il incrémente pipe. Il le décrémente pour toutes nouvelle transmission ou nouvel ACK.
+\subsection*{Westwood}
+Westwood a été conçu pour les \textit{Long fat network}, c'est à dire les réseaux à grand débit sur de longues distances, tels que les réseaux satellitaires. Ces réseaux ont un plus grand taux de perte que les réseaux filaire, pertes qui ne sont donc pas dues à des congestions.Westwood fait une estimation du débit du réseau en divisant la taille d'un paquet envoyé par l'intervalle de temps entre les deux derniers acquittements. En cas de duplication d'ACK ou de time out, on se base sur cette estimation pour fixer sstresh : $sstresh=\frac{BWE \times RTT_{min}}{segsize} $. Westwood se base donc sur le débit moyen du réseau au lieu de compter les pertes, ce qui est plus judicieux dans le cas de réseaux non-filaires.
+
+\subsubsection*{Aggessivité}
+Westwood est "amical" (\textit{friendly}). Lorsqu'il est en concurrence avec Reno, il partage la connexion très équitablement. De plus, TCP Westwood est considérablement plus performant que Reno lorsqu'il y a des pertes de 1\% dans le réseau, ce qui est un taux crédible dans des réseaux non-filaires.
+
+\section*{Les implémentations modernes de TCP}
+\subsection*{BIC}
+\subsection*{CUBIC}
+\subsection*{Compound}
 \end{document}
