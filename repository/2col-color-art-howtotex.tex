@@ -75,7 +75,7 @@
 										
 										\renewcommand\thesubsubsection{}
 
-\pretitle{\vspace{-60pt} \begin{flushleft} \HorRule 
+\pretitle{\vspace{-75pt} \begin{flushleft} \HorRule 
 				\fontsize{15}{15} \usefont{OT1}{phv}{b}{n} \color{DarkRed} \selectfont 
 				}
 \title{Comparaison des principaux algorithmes TCP}					% Title of your article goes here
@@ -88,7 +88,7 @@
 					Université de Strasbourg 								% Institution of author
 					\par\end{flushleft}\HorRule}
 
-\date{22 octobre 2015}																			
+\date{22 Octobre 2015}																			
 
 
 
@@ -113,7 +113,7 @@ Néanmoins, la réinitialisation de la fenêtre d'émission à \textbf{1} à la 
 
 
 \subsection*{Reno}
-Reno résoud déjà grandement le problème de l'oscillation perpetuelle Slow Start/CA en ajoutant la notion de \textbf{Fast Recovery}.
+Reno résoud diminue le problème de l'oscillation perpetuelle Slow Start/CA en ajoutant la notion de \textbf{Fast Recovery}.
 
 \subsubsection*{Fast recovery}
 Après un fast retransmit, au lieu de passer en Slow Start on applique :
@@ -130,69 +130,75 @@ New Reno peut détecter les pertes de paquets multiples et est, de fait, plus pe
 Puisque les pertes ne sont détectées que par les duplications d'acquittements, il faut tout de même attendre un timeout entier pour détecter toutes les pertes. 
 \subsection*{SACK}
 \subsubsection*{ACK sélectifs}
-SACK permet de nommer les segments non-reçus, contrairement à Reno qui se contente de dupliquer les acquittement. Cela permet de récupérer plus vite les paquets perdus.
+SACK permet de désigner les segments non-reçus, contrairement à Reno qui se contente de dupliquer les acquittement. Cela permet de récupérer plus vite les paquets perdus.
 \subsubsection*{Variable \textit{pipe}}
-En Fast Recovery, SACK initialise une variable \textit{pipe}. C'est une estimation du nombre de paquets qui sont encore dans le réseau. Si SACK reçoit une duplication d'ACK, il incrémente pipe. Il le décrémente pour toute nouvelle transmission ou nouvel ACK. Quand $ pipe < CWD$, il renvoie tous les segements qui n'ont pas été acquittés. Cela permet de renvoyer plusieurs segments perdus en moins d'un RTT.
+En Fast Recovery, SACK initialise une variable \textit{pipe}. C'est une estimation du nombre de paquets qui sont encore dans le réseau. Si SACK reçoit une duplication d'ACK, il incrémente pipe. Il le décrémente pour toute nouvelle transmission ou nouvel ACK. Quand $ pipe < CWND$, il renvoie tous les segements qui n'ont pas été acquittés. Cela permet de renvoyer plusieurs segments perdus en moins d'un RTT.
 \subsubsection*{Problèmes de SACK}
 SACK est nettement plus efficace que New Reno, mais il présente un défaut majeur : il doit être implémenté par l'émetteur \textbf{et} le récepteur, sinon il ne marchera pas.
 \subsection*{Vegas}
 \subsubsection*{Mécanisme de retransmission}
-D'après les travaux de Lawrence Brakmo et Larry L. Peterson, deux chercheurs de l'université d'Arizona et concepteurs de Vegas, Reno et New Reno sont très peu performants en ce qui concernt les \textbf{time out}. En effet, ils ont mesuré que pour un RTT moyen de 500ms, il fallait approximativement \textbf{1100ms} à New Reno pour détecter un time out.\footnote{\begin{quote}\textit{In Reno, round trip time (RTT) and variance estimates are computed using a coarse-grained timer (around 500 ms), [...] we found that for losses that resulted in a timeout—usually due to two or more dropped segments in a RTT , the exact figure depends on the number of segments in 4 transit—it took Reno an average of 1100ms.}\end{quote}} Ce qui correspond effectivement à plus de deux RTT. Vegas mesure le temps écoulé entre l'envoi d'un segment et la réception de son acquittement. Et mesure ainsi dynamiquement les RTT.
-Cela permet non seulement d'estimer le time out plus précisément et de perdre moins de temps en cas de réinitialisation déclenchée par un time out, mais non seulement de détecter les pertes et les déséquencements préventivement :
-\begin{description}
-	\item[En cas d'ACK dupliqué]{, on compare le nouveau RTT avec le RTT mesuré précédemment. Si elle est supérieure à Time Out value, on renvoie directement le segment suivant, sans attendre trois acquittements dupliqués.}
-	\item[Après un ACK dupliqué]{on fait de même. En effet, il est moins couteux de renvoyer un segment que de perdre beaucoup de temps pour découvrir qu'il a été perdu. }
-\end{description}
+D'après les travaux de Lawrence Brakmo et Larry L. Peterson, deux chercheurs de l'université d'Arizona et concepteurs de Vegas, Reno et New Reno sont très peu performants en ce qui concernt les \textbf{time out}. En effet, ils ont mesuré que pour un RTT moyen de 500ms, il fallait approximativement \textbf{1100ms} à New Reno pour détecter un time out\cite{Brakmo94}.Ce qui correspond effectivement à plus de deux RTT. Vegas mesure le temps écoulé entre l'envoi d'un segment et la réception de son acquittement et mesure ainsi dynamiquement les RTT.
+Cela permet non seulement d'estimer le time out plus précisément et de perdre moins de temps en cas de réinitialisation déclenchée par un time out, mais aussi de détecter les pertes et les déséquencements préventivement :
+En cas d'ACK dupliqué, on compare le nouveau RTT avec le RTT mesuré précédemment. Si elle est supérieure à Time Out value, on renvoie directement le segment suivant, sans attendre trois acquittements dupliqués.
 De plus, Vegas ne diminue la taille de sa CWND que si le dernier ACK renvoyé a été renvoyé \textbf{après} le dernier changement de taille de fenêtre. En effet on peut supposer que deux pertes peuvent avoir été provoquées par la même congestion et qu'il ne sert à rien d'y réagir deux fois.
 \subsubsection*{Congestion avoidance}
 Pour l'évitement de congestions, Vegas fait une estimation du débit \textit{attendu} et le compare avec le débit \textit{estimé}. Ensuite on fixe des seuils $\alpha<\beta$. Si la différence des débits est inférieure à $\alpha$ alors on augmente CWND linéairement, si elle est supérieure à $ \beta $, on la diminue linéairement.
-\subsubsection*{Congestion avoidance}
+\subsubsection*{Slow start}
 En Slow Start, Vegas n'augmente exponentiellement que tout les RTT, donc moins fréquemment que ses comparses. De plus, on fixe expérimentalement un seuil $\gamma$. Si la différence entre le RTT \textit{estimé} et le \textit{attendu} est inférieure à ce $\gamma$, on repasse en CA.
 \subsubsection*{Aggressivité}
-La courbe de Vegas est donc très ronde puisque l'algorithme tente d'anticiper les problèmes de congestion. Ces variations sont beaucoup plus lentes que Reno, par exemple. On dit que Vegas est \textbf{peu aggressif}. Contrairement à Reno ou à Tahoe, il ne tente pas de prendre le plus de bande passante que possible. Il en prend plus si il sent que le réseau lui permet. Si Reno intervient sur le même réseau que Vegas, alors les performances de Vegas vont diminuer considérablement, étant donné que Vegas diminuera de sa propre initiative son débit d'émission en amont de la congestion provoquée par Reno. Vegas cède en quelque sorte la priorité aux autres algorithmes cités précedemment.
+La courbe de Vegas est très ronde puisque l'algorithme tente d'anticiper les problèmes de congestion. Ces variations sont beaucoup plus lentes que Reno, par exemple. Il en prend plus si il sent que le réseau lui permet. Si Reno intervient sur le même réseau que Vegas, alors les performances de Vegas vont diminuer considérablement, étant donné que Vegas diminuera de sa propre initiative son débit d'émission en amont de la congestion provoquée par Reno. Vegas cède en quelque sorte la priorité aux autres algorithmes cités précedemment.
 
 \subsection*{Westwood}
 Westwood a été conçu pour les réseaux connaissant un taux de perte de paquet important malgré une absence de congestion, tels que les réseaux sans fil. Comme ces pertes sont inhérentes au réseau, il ne sert à rien de compter directement les paquets perdus, car le même taux de paquet sera perdu quelque soit la taille de CWND. Du coup, Westwood fait une estimation du débit du réseau en divisant la taille d'un paquet envoyé par l'intervalle de temps entre les deux derniers acquittements. En cas de duplication d'ACK ou de time out, on se base sur cette estimation pour fixer sstresh : $sstresh=\frac{BWE \times RTT_{min}}{segsize} $. Westwood se base donc sur le débit moyen du réseau au lieu de compter les pertes.
 
 \subsubsection*{Aggessivité}
-Westwood est "amical" (\textit{friendly}). D'après les fondateurs de Westwood, lorsqu'il est en concurrence avec Reno, il partage la connexion très équitablement. De plus, TCP Westwood est considérablement plus performant que Reno lorsqu'il y a des pertes de 1\% dans le réseau, ce qui est un taux crédible dans des réseaux non-filaires.
+Westwood est "amical" (\textit{friendly}). De plus, TCP Westwood est considérablement plus performant que Reno lorsqu'il y a des pertes de 1\% dans le réseau, ce qui est un taux crédible dans des réseaux non-filaires\cite{Casetti02}.
+
+\subsubsection*{Faiblesse}
+Westwood présentait une faiblesse provoquée par le phénomène d'\textit{ack-compression}. En effet il se basait sur l'écart de temps entre deux ACK successifs. Hors cet intervalle pouvait être diminué à tort lorsque les routeurs bufferisaient plusieurs paquets. A ce moment là l'algorithme surestimait le débit du réseau et envoyait plus trop de paquets. Ce problème a été résolu dans Westwood+, qui ne sera pas traité dans ce texte.
 
 \section*{Les implémentations modernes de TCP}
 \subsection*{BIC (\textit{\textbf{B}inary \textbf{I}ncrease \textbf{C}ongestion Control}}
-BIC est une implémentation TCP optimisée pour les \textit{Long fat network}, c'est à dire les réseaux à grande latence et à à grand débit, tels que les réseaux satellitaires. Dans ces réseaux, il faut trouver la CWND optimale en provoquant le moins de perte de paquet possible. Pour ce faire, BIC fait une recherche binaire, recherche réputée pour sa complexitée logarithmique.
+BIC est une implémentation TCP optimisée pour les \textit{Long fat network}, c'est à dire les réseaux à grande latence et à à grand débit, tels que les réseaux satellitaires. Dans ces réseaux, il faut trouver la CWND optimale en provoquant le moins de pertes de paquet que possible. Pour ce faire, BIC fait une recherche binaire, recherche réputée pour sa complexité logarithmique.
 
 \subsubsection*{Protocole}
-Pour procéder à sa recherche binaire, BIC enregistre $W_{max}$, la taille maximum de CWND avant le dernire Fast Recovery, et $W_{min}$, la taille de la fenêtre juste \textbf{avant} le dernier fast recovery. La moyenne de $W_{max}$ et $W_{min}$, $W_{temp}$ est utilisée comme CWND. On augmente CWND linéairement jusqu'à $W_{max}$. S'il y a perte de paquet, $W_{temp}$ devient le dernier $W_{max}$, sinon il devient le dernier $W_{min}$. La taille de la fenêtre $\{W_{max}\;W_{min}\}$ est divisée par deux à chaque itération. Afin de ne pas imposer de changement de débit trop violent au réseau, on plafonne l'augmentation de la CWND arbitrairement avec un indice $S_{max}$.
+Pour procéder à sa recherche binaire, BIC enregistre $W_{max}$, la taille maximum de CWND avant le dernier Fast Recovery, et $W_{min}$, la taille de la fenêtre juste \textbf{après} le dernier fast recovery. La moyenne de $W_{max}$ et $W_{min}$, $W_{temp}$ est utilisée comme CWND. On augmente CWND linéairement jusqu'à $W_{max}$. S'il y a perte de paquet, $W_{temp}$ devient le dernier $W_{max}$, sinon il devient le dernier $W_{min}$. La taille de la fenêtre $\{W_{max}\;W_{min}\}$ est divisée par deux à chaque itération. Afin de ne pas imposer de changement de débit trop violent au réseau, on plafonne l'augmentation de la CWND arbitrairement avec un indice $S_{max}$.
 
-Quand CWND dépasse $W_{max}$, il faut trouver une nouvelle taille de fenêtre maximale. On entre alors en "Max probing" : on augmente d'abord CWND linéairement, de $S_{max}$, en supposant qu'il n'est pas loin, puis au bout d'un certain temps, s'il n'y a pas de perte, on suppose que $W_{max}$ est très élevé. Dans ce cas on augmente CWND de $N \times S_{max}$. N étant le nombre d'itérations de la phase Incremental Addition du max probing.
+Quand CWND dépasse $W_{max}$, il faut trouver une nouvelle taille de fenêtre maximale. On entre alors en "\textbf{Max probing}" : on augmente d'abord CWND linéairement, de $S_{max}$, en supposant qu'il n'est pas loin, puis au bout d'un certain temps, s'il n'y a pas de perte, on suppose que $W_{max}$ est très élevé. Dans ce cas on augmente CWND de $N \times S_{max}$ par RTT. N étant le nombre d'itérations de la phase Incremental Addition du max probing.
 
 \subsection*{CUBIC}
-BIC est certes avantageux pour les \textit{LFN}, mais il est très aggressif, dans le sens ou il augmente très rapidement et très fortement sa CWND. C'est normal, c'est le but de BIC. Pour des réseaux à faible débit ou faible RTT, cela peut-être néanmoins très contraignant.
+BIC est certes avantageux pour les \textit{LFN}, mais il est très aggressif, dans le sens ou il augmente et  fortement sa CWND. Pour des réseaux à faible débit ou faible RTT, cela peut-être néanmoins contraignant.
 \subsubsection*{Protocole}
-Cubic se veut lui aussi souple et stable, mais beaucoup moins aggressif. La taille de CWND est déterminée par une fonction cubique : 
+Cubic se veut lui aussi souple et stable, mais moins aggressif. La taille de CWND est déterminée par une fonction cubique : 
 
-$W_{CUBIC} = C(t-K)^3 - W_{max}$, avec \textit{C} déterminé empiriquement, \textit{t} le temps écoulé depuis depuis la dernière réduction de fenêtre, $W_{max}$ la taille de la fenêtre juste avant la dernière réduction de fenêtre et 
+\textbf{$W_{CUBIC} = C(t-K)^3 - W_{max}$},
 
-$K = \sqrt[3]{W_{max}\times\frac{\beta}{C}}$, $\beta$ étant le facteur de réduction de la CWND lors de la dernière réduction.
-Derrière cette fonction complexe se cachent plusieurs fait :
-\begin{description}
-\item{La fonction est \textbf{cubique}, donc elle croît rapidement puis se stabilise autour de la $W_{max}$, pour recroître rapidement.}
-\item{Elle dépend de l'intervalle de temps écoulé depuis la dernière réduction ce qui signifie que \textbf{tous} les processus Cubic TCP d'un même réseau croîtront à la même vitesse, garantissant l'équité de l'algorithme envers différents agents TCP.}
-\item{Si le RTT est faible, la fonction croît lentement. Ce qui résoud le problème d'aggressivité posé posé par BIC, car CUBIC est "amical" envers toutes les implémentations de TCP.} 	
-\end{description}
+ avec \textit{C} déterminé empiriquement, \textit{t} le temps écoulé depuis depuis la dernière réduction de fenêtre, $W_{max}$ la taille de la fenêtre juste avant la dernière réduction de fenêtre et 
+
+$K = \sqrt[3]{W_{max}\times\frac{\beta}{C}}$, 
+
+$\beta$ étant le facteur de réduction de la CWND lors de la dernière réduction.
+
+On peut remarquer plusieurs choses :
+
+-La fonction est \textbf{cubique}, donc elle croît rapidement puis se stabilise autour de la $W_{max}$, pour recroître rapidement.
+
+-Elle dépend de l'intervalle de temps écoulé depuis la dernière réduction ce qui signifie que \textbf{tous} les processus Cubic TCP d'un même réseau croîtront à la même vitesse, garantissant l'équité de l'algorithme envers différents agents TCP.
+
+-Si le RTT est faible, la fonction croît lentement. Ce qui résoud le problème d'aggressivité posé par BIC, car CUBIC est "amical" envers toutes les implémentations de TCP.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{Compound_vs_BIC}
-    \caption{Sur ce schéma, on voit que CUBIC est plus rond que BIC autour de $W_{Max}$}
+    \caption{Sur ce schéma, on voit que CUBIC est plus "rond" que BIC \cite{Rhee05}}
     \label{fig:mesh1}
 \end{figure}
 
 \subsection*{Compound}
-Compound (qui signifie en anglais \textit{compsé}) tient son nom du fait qu'il est un hybride entre deux algorithmes TCP. L'idée derrière ce principe est que si le lien est sous-utilisé, alors il faut augmenter la taille de CWND le plus rapidement possible, mais que s'il est pleinement utilisé, alors il faut limiter l'aggressivité de l'algorithme, afin de garantir le \textit{TCP fairness}.
-La CWND est la somme de deux fenêtre : une \textit{delay-window} et une \textit{AIMD-Window}. Bien que AIMD (\textit{additive-increase/multiplicative-decrease}) ne soit pas traité dans ce texte, on peut noter que cet algorithme augmente linéairement et est divisé par un facteur fixé arbitrairement en cas de congestion. En cas de perte de paquet, et qu'on entre en congestion avoidance, la \textit{delay-window} prend de plus en plus d'ampleur selon un algorithme très similaire à TCP Vegas, tandis que la \textit{AIMD-Window} a de moins en moins d'importance puisqu'elle augmente désormais très lentement.
+Compound (qui signifie en anglais \textit{composé}) tient son nom du fait qu'il est un hybride entre deux algorithmes TCP. L'idée derrière ce principe est que si le lien est sous-utilisé, alors il faut augmenter la taille de CWND le plus rapidement possible, mais que s'il est pleinement utilisé, alors il faut limiter l'aggressivité de l'algorithme, afin de garantir l'équité (\textit{TCP fairness}).
+La CWND est la somme de deux fenêtre : une \textit{delay-window} et une \textit{AIMD-Window}. Bien que AIMD (\textit{additive-increase/multiplicative-decrease}) ne soit pas traité dans ce texte, on peut noter que cet algorithme augmente linéairement et est divisé par un facteur fixé arbitrairement en cas de congestion. En cas de perte de paquet, et si on entre en congestion avoidance, la \textit{delay-window} prend de plus en plus d'ampleur selon un algorithme très similaire à TCP Vegas, tandis que la \textit{AIMD-Window} a de moins en moins d'importance puisqu'elle augmente désormais très lentement.
 
-\section*{Y a-t-il un meilleur TCP?}
+\section*{Conclusion : y a-t-il un "meilleur TCP"?}
 \subsection*{Critères}
 Il y a trois critères pour comparer l'efficacité des algorithmes :
 \begin{description}
@@ -201,9 +207,9 @@ Il y a trois critères pour comparer l'efficacité des algorithmes :
 \item[Son \textbf{efficacité} :]{cet algorithme monopolise-t-il en moyenne une proportion suffisante du lien?} 	
 \end{description}
 \subsection*{Bilan}
-De nombreuses simulations ont montré que les premiers algorithmes de TCP sont désormais obsolètes. Vegas est incompatible avec Reno, Tahoe est trop oscillant, Reno/New Reno mettent trop de temps à détecter les pertes multiples, SACK est difficile à mettre en place et Westwood présente certains défauts qui ont été corrigés dans Westwood+.
+Nous avons vu que les algorithmes historiques de TCP sont désormais obsolètes : Tahoe est trop oscillant,  Reno/New Reno mettent trop de temps à détecter les pertes multiples,  Vegas est incompatible avec Reno, SACK est difficile à mettre en place et Westwood présente certains défauts qui ont été corrigés dans Westwood+.
 
-Pour les implémentations modernes de TCP, le choix de l'algorithme dépend de la topologie du réseau. En effet, BIC est conçu pour les \textit{Long Fat Network}, tandis que CUBIC réagit mieux sur les réseaux à faible latence. Il est donc conseillé d'expérimenter différentes implémentations sur le réseau cible et de regarder laquelle est la plus efficace, en fonction du critère que l'on priorise. L'équité par exemple paraît très importante sur un réseau très peuplé, la compatibilité le paraît encore plus si l'on n'est pas maître des autres agents utilisant le réseau. Enfin si c'est un réseau peu peuplé, alors on peut se baser sur l'efficacité de l'algorithme lorsqu'on l-e sélectionne.
+Pour les implémentations modernes de TCP, le choix de l'algorithme dépend de la topologie du réseau. En effet, BIC est conçu pour les LFN, tandis que CUBIC réagit mieux sur les réseaux à faible latence. Il est donc conseillé d'expérimenter différentes implémentations sur le réseau cible et de regarder laquelle est la plus efficace, en fonction du critère que l'on priorise. L'équité par exemple paraît très importante sur un réseau très peuplé, la compatibilité si l'on n'est pas maître des autres agents utilisant le réseau, l'efficacité pure si la bande passante du réseau n'est pas disputée... Qui sait si un jour, il existera un algorithme pouvant allier les trois sans compromis et quelque soit la topologie du réseau?
 \begin{thebibliography}{9}
 
 \tiny{\bibitem{Brakmo94}
@@ -211,34 +217,39 @@ Pour les implémentations modernes de TCP, le choix de l'algorithme dépend de l
 	\emph{TCP Vegas : New Techniques for Congestion Detection and Avoidance},
 	SIGCOMM Comput. Commun. Rev.,
 	1994
-\bibitem{Grieco95}
-	Luigi A. Grieco, Saverio Mascolo ,
-	\emph{Performance Evaluation and Comparison of Westwood+, New Reno, and Vegas TCP Congestion Control },
-	SIGCOMM Comput. Commun. Rev.,
-	2004
 \bibitem{Casetti02}
 	Claudio Casetti, Mario Gerla, Saverio Mascolo, M. Y. Sanadidi, Ren Wang
 	\emph{TCP Westwood: End-to-End Congestion Control for Wired/Wireless Networks},
 	Wirel. Netw.,
 	2002
-\bibitem{Casetti02}
-	Lisong Xu, Khaled Harfoush, Injong Rhee
+\bibitem{Grieco95}
+	Luigi A. Grieco, Saverio Mascolo ,
+	\emph{Performance Evaluation and Comparison of Westwood+, New Reno, and Vegas TCP Congestion Control },
+	SIGCOMM Comput. Commun. Rev.,
+	2004
+\bibitem{Xu01}
+	Lisong Xu, Khaled Harfoush, Injong Rhee,
 	\emph{ Binary Increase Congestion Control (BIC) for Fast Long-Distance Networks},
 	INFOCOM 2004. Twenty-third AnnualJoint Conference of the IEEE Computer and Communications Societies,
 	2004
+\bibitem{compound1}
+	Kun Tan, Jingmin Song, Qian Zhang, Murari Sridharan,
+	\emph{A Compound TCP Approach for High-speed and Long Distance Networks },
+	INFOCOM 2006. 25th IEEE International Conference on Computer Communications. Proceedings		,
+	2006
 \bibitem{Rhee05}
 	Injong Rhee, Lisong Xu,
 	\emph{CUBIC: A New TCP-Friendly High-Speed TCP Variant},
 	SIGOPS Oper. Syst. Rev.,
 	2008
-\bibitem{compound1}
-	Kun Tan, Jingmin Song, Qian Zhang, Murari Sridharan
-	\emph{A Compound TCP Approach for High-speed and Long Distance Networks },
-	INFOCOM 2006. 25th IEEE International Conference on Computer Communications. Proceedings		,
-	2006
 \bibitem{Site01}
-	\emph{BIC and CUBIC}
-	http://research.csc.ncsu.edu/netsrv/?q=content/bic-and-cubic}
+	\emph{BIC and CUBIC},
+	http://research.csc.ncsu.edu/netsrv/?q=content/bic-and-cubic
+\bibitem{Site02}
+	\emph{Ack-compression},
+	http://web.opalsoft.net/qos/default.php?p=tcp-70
+
+}
 
 \end{thebibliography}
 \end{document}
