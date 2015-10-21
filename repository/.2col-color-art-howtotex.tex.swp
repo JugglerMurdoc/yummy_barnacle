@@ -86,7 +86,7 @@
 					Université de Strasbourg 								% Institution of author
 					\par\end{flushleft}\HorRule}
 
-\date{20 octobre 2015}																			
+\date{22 octobre 2015}																			
 
 
 
@@ -95,19 +95,14 @@
 \maketitle
 \thispagestyle{fancy} 			% Enabling the custom headers/footers for the first page 
 % The first character should be within \initial{}
-\initial{T}\textbf{CP (\textit{Transmission Control Protocol})} est une implémentation de la couche transport du modèle OSI. C'est de loin son implémentation la plus populaire, avec pour maigre concurrent UDP, qui est moins contraignant et donc plus utile pour les connexions ne nécéssitant pas une grand robustesse. TCP étant omniprésent dans les réseaux actuels, il a donc souvent été étudié et réimplémenté, parfois parce qu'une implémentation présentait des faiblesses qui lui étaient inhérentes, parfois parce qu'aucune implémentation ne répondait à une problématique bien précise du réseau l'utilisant, comme c'est le cas pour les \textit{long fat network}, par exemple. Dans cet rédaction, nous étudierons tout d'abord les différentes implémentations historiques de TCP. Celles ayant été utilisées un jour ou l'autre mais qui sont ajourd'hui obsolètes car peu efficaces. Puis nous étudierons certains des algorithmes utilisés aujourd'hui, dans le but de comprendre quels sont les critères déterminants lors du choix de l'algorithme utilisé. En effet ceux-ci peuvent-être plus ou moins "aggressifs" ou stables.
+\initial{T}\textbf{CP (\textit{Transmission Control Protocol})} est une implémentation de la couche transport du modèle OSI. TCP étant omniprésent dans les réseaux actuels, il a donc souvent été étudié et réimplémenté, parfois parce qu'une implémentation présentait des faiblesses qui lui étaient inhérentes, parfois parce qu'aucune implémentation ne répondait à une problématique bien précise de réseau. Dans cet rédaction, nous étudierons tout d'abord les différentes implémentations historiques de TCP. Celles ayant été utilisées un jour ou l'autre mais qui sont ajourd'hui obsolètes car peu efficaces. Puis nous étudierons certains des algorithmes utilisés aujourd'hui, dans le but de comprendre quels sont les critères déterminants lors du choix de l'algorithme utilisé. En effet ceux-ci peuvent-être plus ou moins "aggressifs" ou stables.
 
 \section*{Les premières implémentations de TCP}
 De TCP Tahoe à TCP Westwood, en passant par TCP Reno, nous allons vous présenter une série d'algorithmes qui se sont globalement succédés, chacun étant dans la plupart des cas plus efficace que son prédecesseur, en tout point.
 
 \subsection*{Tahoe}
 \subsubsection*{Slow start \& congestion avoidance}
-Cette implémentation est citée pour la première fois en 1988 dans un article de Van Jacobson et Karels. C'est la plus simple et la moins efficace, tout types de problème confondus. Au début, on est en \textbf{Slow Start} : tant qu'on n'a aucune perte, on double la taille de la \textit{congestion window} (\textbf{CWND}), c'est à dire la taille en segments des rafales TCP envoyées. À chaque fois que tous les segments envoyés sont acquittés, on double la taille de la CWND. Le slow start est interrompu dès la première perte de paquet, c'est à dire lorsqu'on reçoit plusieurs fois le même acquittement (\textbf{ACK}) ou lors d'un \textbf{time out}. 
-
-Comme la plupart des pertes de paquets sur les réseaux filaires sont provoqués par des congestions, Tahoe implémente le mode \textbf{Congestion Avoidance (CA)}. On se base sur une variable nommée \textbf{sstresh} (\textit{slow-start threshold}). Lorsque $CWND <= sstresh$, on est en Slow Start, sinon on est en CA. En CA, on augmente la taille de la fenêtre de 1 segment à chaque fois que tous les segments d'une rafale sont acquittés. C'est donc une progression linéaire.
-
-\subsubsection*{Fast retransmit}
-Si un ACK est reçu trois fois de suite, alors le segment (ACK+1) a probablement été perdu. Il ne s'agit probablement pas d'un déséquencement. Pour pallier ce problème, Tahoe renvoie directement le segment concerné au lieu d'attendre la fin d'un timeout. Après un fast retransmit, $sstresh=\frac{CWND}{2} $ et $ CWND=1$ (Slow Start).
+Cette implémentation est citée pour la première fois en 1988 dans un article de Van Jacobson et Karels. C'est la plus simple et la moins efficace, tout types de problème confondus. Il implémente le \textbf{slow start}, la \textbf{congestion avoidance}, et le \textbf{fast retransmit}.
 
 \subsubsection*{Avantages et faiblesses}
 En résumé, Tahoe est déjà une réelle avancée, car il permet d'approximer très grossièrement la plus grosse taille de fenêtre d'émission possible, et il reste stable à moins qu'il n'y aie des congestions sur le réseau. Dans ce cas, Tahoe peut s'adapter au problème et diminuer la taille de sa fenêtre d'émission.
@@ -195,9 +190,46 @@ Il y a trois critères pour comparer l'efficacité des algorithmes :
 \item[Son \textbf{équité} :]{si plusieurs agents de cet algorithme tournent sur un même réseau, vont-ils se partager la bande passante équitablement?}
 \item[Sa \textbf{compatibilité} :]{cet algorithme va-t-il être trop aggressif ou trop pacifique face à d'autres algorithmes TCP sur le réseau?}
 \item[Son \textbf{efficacité} :]{cet algorithme monopolise-t-il en moyenne une proportion suffisante du lien?} 	
+\end{description}
 \subsection*{Bilan}
 De nombreuses simulations ont montré que les premiers algorithmes de TCP sont désormais obsolètes. Vegas est incompatible avec Reno, Tahoe est trop oscillant, Reno/New Reno mettent trop de temps à détecter les pertes multiples, SACK est difficile à mettre en place et Westwood présente certains défauts qui ont été corrigés dans Westwood+.
 
-Pour les implémentations modernes de TCP, le choix de l'algorithme dépend de la topologie du réseau. En effet, BIC est conçu pour les \textit{Long Fat Network}, tandis que CUBIC réagit mieux sur les réseaux à faible latence. Il est donc conseillé d'expérimenter différentes implémentations sur le réseau cible et de regarder laquelle est la plus efficace, en fonction du critère que l'on priorise. L'équité par exemple paraît très importante sur un réseau très peuplé, la compatibilité le paraît encore plus si l'on n'est pas maître des autres agents utilisant le réseau. Enfin si c'est un réseau peu peuplé, alors on peut probablement se base sur l'efficacité de l'algorithme lorsqu'on le sélectionne. 
-\end{description}
+Pour les implémentations modernes de TCP, le choix de l'algorithme dépend de la topologie du réseau. En effet, BIC est conçu pour les \textit{Long Fat Network}, tandis que CUBIC réagit mieux sur les réseaux à faible latence. Il est donc conseillé d'expérimenter différentes implémentations sur le réseau cible et de regarder laquelle est la plus efficace, en fonction du critère que l'on priorise. L'équité par exemple paraît très importante sur un réseau très peuplé, la compatibilité le paraît encore plus si l'on n'est pas maître des autres agents utilisant le réseau. Enfin si c'est un réseau peu peuplé, alors on peut se baser sur l'efficacité de l'algorithme lorsqu'on l-e sélectionne.
+\begin{thebibliography}{9}
+
+\scriptsize{\bibitem{Brakmo94}
+	Lawrence S. Brakmo, Sean W. O’Malley, Larry L. Peterson,
+	\emph{TCP Vegas : New Techniques for Congestion Detection and Avoidance},
+	SIGCOMM Comput. Commun. Rev.,
+	1994
+\bibitem{Grieco95}
+	Luigi A. Grieco, Saverio Mascolo ,
+	\emph{Performance Evaluation and Comparison of Westwood+, New Reno, and Vegas TCP Congestion Control },
+	SIGCOMM Comput. Commun. Rev.,
+	2004
+\bibitem{Casetti02}
+	Claudio Casetti, Mario Gerla, Saverio Mascolo, M. Y. Sanadidi, Ren Wang
+	\emph{TCP Westwood: End-to-End Congestion Control for Wired/Wireless Networks},
+	Wirel. Netw.,
+	2002
+\bibitem{Casetti02}
+	Lisong Xu, Khaled Harfoush, Injong Rhee
+	\emph{ Binary Increase Congestion Control (BIC) for Fast Long-Distance Networks},
+	INFOCOM 2004. Twenty-third AnnualJoint Conference of the IEEE Computer and Communications Societies,
+	2004
+\bibitem{Rhee05}
+	Injong Rhee, Lisong Xu,
+	\emph{CUBIC: A New TCP-Friendly High-Speed TCP Variant},
+	SIGOPS Oper. Syst. Rev.,
+	2008
+\bibitem{compound1}
+	Kun Tan, Jingmin Song, Qian Zhang, Murari Sridharan
+	\emph{A Compound TCP Approach for High-speed and Long Distance Networks },
+	INFOCOM 2006. 25th IEEE International Conference on Computer Communications. Proceedings		,
+	2006
+\bibitem{Site01}
+	\emph{BIC and CUBIC}
+	http://research.csc.ncsu.edu/netsrv/?q=content/bic-and-cubic}
+
+\end{thebibliography}
 \end{document}
