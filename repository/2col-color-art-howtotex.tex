@@ -23,6 +23,8 @@
 \usepackage{booktabs}												% Nicer tables
 \usepackage{fix-cm}													% Custom fontsizes
 \usepackage[utf8]{inputenc}
+\usepackage[rightcaption]{sidecap} 
+\usepackage{graphicx} %package to manage images
 
 
 %%% Custom sectioning (sectsty package)
@@ -95,17 +97,17 @@
 \maketitle
 \thispagestyle{fancy} 			% Enabling the custom headers/footers for the first page 
 % The first character should be within \initial{}
-\initial{T}\textbf{CP (\textit{Transmission Control Protocol})} est une implémentation de la couche transport du modèle OSI. TCP étant omniprésent dans les réseaux actuels, il a donc souvent été étudié et réimplémenté, parfois parce qu'une implémentation présentait des faiblesses qui lui étaient inhérentes, parfois parce qu'aucune implémentation ne répondait à une problématique bien précise de réseau. Dans cet rédaction, nous étudierons tout d'abord les différentes implémentations historiques de TCP. Celles ayant été utilisées un jour ou l'autre mais qui sont ajourd'hui obsolètes car peu efficaces. Puis nous étudierons certains des algorithmes utilisés aujourd'hui, dans le but de comprendre quels sont les critères déterminants lors du choix de l'algorithme utilisé. En effet ceux-ci peuvent-être plus ou moins "aggressifs" ou stables.
+\initial{T}\textbf{CP (\textit{Transmission Control Protocol})} est une implémentation de la couche transport du modèle OSI. TCP étant omniprésent dans les réseaux actuels, il a donc souvent été étudié et réimplémenté, parfois parce qu'une implémentation présentait des faiblesses qui lui étaient inhérentes, parfois parce qu'aucune implémentation ne répondait à une problématique bien précise du réseau. Dans ce texte, nous étudierons tout d'abord les différentes implémentations historiques de TCP. Celles ayant été utilisées un jour ou l'autre mais qui sont ajourd'hui obsolètes car peu efficaces. Puis nous étudierons certains des algorithmes utilisés aujourd'hui, dans le but de comprendre quels sont les critères déterminants lors du choix de l'algorithme utilisé.
 
 \section*{Les premières implémentations de TCP}
-De TCP Tahoe à TCP Westwood, en passant par TCP Reno, nous allons vous présenter une série d'algorithmes qui se sont globalement succédés, chacun étant dans la plupart des cas plus efficace que son prédecesseur, en tout point.
+De TCP Tahoe à TCP Westwood, en passant par TCP Reno, nous allons présenter une série d'algorithmes qui se sont globalement succédés, chacun étant dans la plupart des cas plus efficace que son prédecesseur.
 
 \subsection*{Tahoe}
 \subsubsection*{Slow start \& congestion avoidance}
-Cette implémentation est citée pour la première fois en 1988 dans un article de Van Jacobson et Karels. C'est la plus simple et la moins efficace, tout types de problème confondus. Il implémente le \textbf{slow start}, la \textbf{congestion avoidance}, et le \textbf{fast retransmit}.
-
+Cette implémentation est citée pour la première fois en 1988 dans un article de Van Jacobson et Karels. C'est la plus simple et la moins efficace, tout types de problème confondus. Il implémente le \textbf{slow start}, la \textbf{congestion avoidance}, et le \textbf{fast retransmit}. 
+Cela signifie qu'il double la taille de sa CWND à chaque RTT, jusqu'à atteindre le sstresh. A ce moment il passe en congestion avoidance, n'augmentant la taille de sa CWND que de 1 à chaque RTT. En cas de time out, ou d'ACK triplement dupliqué, $sstresh=\frac{CWND_{current}}{2}$, et on repasse en slow start.
 \subsubsection*{Avantages et faiblesses}
-En résumé, Tahoe est déjà une réelle avancée, car il permet d'approximer très grossièrement la plus grosse taille de fenêtre d'émission possible, et il reste stable à moins qu'il n'y aie des congestions sur le réseau. Dans ce cas, Tahoe peut s'adapter au problème et diminuer la taille de sa fenêtre d'émission.
+Tahoe est déjà une réelle avancée, car il permet d'approximer très grossièrement la plus grosse taille de fenêtre d'émission possible, et il reste stable à moins qu'il n'y aie des congestions sur le réseau. Dans ce cas, Tahoe peut s'adapter au problème et diminuer la taille de sa fenêtre d'émission.
 
 Néanmoins, la réinitialisation de la fenêtre d'émission à \textbf{1} à la moindre perte de paquet est une sous-estimation beaucoup trop importante. La taille moyenne de CWND est donc bien plus faible que ce qu'elle pourrait être optimalement.
 
@@ -179,6 +181,13 @@ Derrière cette fonction complexe se cachent plusieurs fait :
 \item{Si le RTT est faible, la fonction croît lentement. Ce qui résoud le problème d'aggressivité posé posé par BIC, car CUBIC est "amical" envers toutes les implémentations de TCP.} 	
 \end{description}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Compound_vs_BIC}
+    \caption{Sur ce schéma, on voit que CUBIC est plus rond que BIC autour de $W_{Max}$}
+    \label{fig:mesh1}
+\end{figure}
+
 \subsection*{Compound}
 Compound (qui signifie en anglais \textit{compsé}) tient son nom du fait qu'il est un hybride entre deux algorithmes TCP. L'idée derrière ce principe est que si le lien est sous-utilisé, alors il faut augmenter la taille de CWND le plus rapidement possible, mais que s'il est pleinement utilisé, alors il faut limiter l'aggressivité de l'algorithme, afin de garantir le \textit{TCP fairness}.
 La CWND est la somme de deux fenêtre : une \textit{delay-window} et une \textit{AIMD-Window}. Bien que AIMD (\textit{additive-increase/multiplicative-decrease}) ne soit pas traité dans ce texte, on peut noter que cet algorithme augmente linéairement et est divisé par un facteur fixé arbitrairement en cas de congestion. En cas de perte de paquet, et qu'on entre en congestion avoidance, la \textit{delay-window} prend de plus en plus d'ampleur selon un algorithme très similaire à TCP Vegas, tandis que la \textit{AIMD-Window} a de moins en moins d'importance puisqu'elle augmente désormais très lentement.
@@ -197,7 +206,7 @@ De nombreuses simulations ont montré que les premiers algorithmes de TCP sont d
 Pour les implémentations modernes de TCP, le choix de l'algorithme dépend de la topologie du réseau. En effet, BIC est conçu pour les \textit{Long Fat Network}, tandis que CUBIC réagit mieux sur les réseaux à faible latence. Il est donc conseillé d'expérimenter différentes implémentations sur le réseau cible et de regarder laquelle est la plus efficace, en fonction du critère que l'on priorise. L'équité par exemple paraît très importante sur un réseau très peuplé, la compatibilité le paraît encore plus si l'on n'est pas maître des autres agents utilisant le réseau. Enfin si c'est un réseau peu peuplé, alors on peut se baser sur l'efficacité de l'algorithme lorsqu'on l-e sélectionne.
 \begin{thebibliography}{9}
 
-\scriptsize{\bibitem{Brakmo94}
+\tiny{\bibitem{Brakmo94}
 	Lawrence S. Brakmo, Sean W. O’Malley, Larry L. Peterson,
 	\emph{TCP Vegas : New Techniques for Congestion Detection and Avoidance},
 	SIGCOMM Comput. Commun. Rev.,
